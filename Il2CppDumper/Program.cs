@@ -11,115 +11,64 @@ namespace Il2CppDumper
 {
     class Program
     {
-        private static Config config;
+    private static Config config;
 
-        [STAThread]
-        static void Main(string[] args)
+    public static void Main()
+    {
+        config = JsonConvert.DeserializeObject<Config>("{'DumpMethod': true,  'DumpField': true,  'DumpProperty': true,  'DumpAttribute': true,  'DumpFieldOffset': true,  'DumpMethodOffset': true,  'DumpTypeDefIndex': true,  'GenerateDummyDll': true,  'GenerateStruct': true,  'DummyDllAddToken': true,  'RequireAnyKey': true,  'ForceIl2CppVersion': false,  'ForceVersion': 16}");
+
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("                Credits:");
+        Console.ForegroundColor = ConsoleColor.Yellow;
+
+        Console.WriteLine("                Dumper By : Prefare");
+        Console.WriteLine("                Converted Apk By : Nepmods");
+
+        Console.ForegroundColor = ConsoleColor.Red;
+
+        Console.WriteLine("                Info:");
+
+        Console.ForegroundColor = ConsoleColor.DarkCyan;
+
+        Console.WriteLine("                Il2cppdumper Version : 6.7.8");
+        Console.WriteLine("                Apk Version : 1.3");
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.BackgroundColor = ConsoleColor.Blue;
+
+        Console.WriteLine("\n\n\n    ▁ ▂ ▄ ▅ ▆ ▇ █ [ Nepmods ] █ ▇ ▆ ▅ ▄ ▂ ▁    ");
+        Console.WriteLine("\n\nPress Enter To start Dumper");
+        Console.ReadLine();
+        Console.WriteLine("\n\nEnter The Path Of libIl2cpp.so");
+        string il2cppPath = Console.ReadLine();
+        Console.WriteLine("\n\nEnter The Path Of global-metadata.dat");
+        string metadataPath = Console.ReadLine();
+        string SavePath = il2cppPath.Replace("libil2cpp.so", "");
+        String[] outPath = il2cppPath.Split("/");
+        String LastPath = outPath[outPath.Length-1];
+        string outputDir = il2cppPath.Replace(LastPath, "");
+        Console.WriteLine("Dumping Form : " + outputDir);
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine("Press Enter To Start");
+        Console.ReadLine();
+        Console.ResetColor();
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.BackgroundColor = ConsoleColor.Black;
+
+
+        try
         {
-            config = JsonConvert.DeserializeObject<Config>(File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + @"config.json"));
-            string il2cppPath = null;
-            string metadataPath = null;
-            string outputDir = null;
-
-            if (args.Length == 1)
+            if (Init(il2cppPath, metadataPath, out var metadata, out var il2Cpp))
             {
-                if (args[0] == "-h" || args[0] == "--help" || args[0] == "/?" || args[0] == "/h")
-                {
-                    ShowHelp();
-                    return;
-                }
-            }
-            if (args.Length > 3)
-            {
-                ShowHelp();
-                return;
-            }
-            if (args.Length > 1)
-            {
-                foreach (var arg in args)
-                {
-                    if (File.Exists(arg))
-                    {
-                        var file = File.ReadAllBytes(arg);
-                        if (BitConverter.ToUInt32(file, 0) == 0xFAB11BAF)
-                        {
-                            metadataPath = arg;
-                        }
-                        else
-                        {
-                            il2cppPath = arg;
-                        }
-                    }
-                    else if (Directory.Exists(arg))
-                    {
-                        outputDir = Path.GetFullPath(arg) + Path.DirectorySeparatorChar;
-                    }
-                }
-            }
-            if (outputDir == null)
-            {
-                outputDir = AppDomain.CurrentDomain.BaseDirectory;
-            }
-#if NETFRAMEWORK
-            if (il2cppPath == null)
-            {
-                var ofd = new OpenFileDialog();
-                ofd.Filter = "Il2Cpp binary file|*.*";
-                if (ofd.ShowDialog() == DialogResult.OK)
-                {
-                    il2cppPath = ofd.FileName;
-                    ofd.Filter = "global-metadata|global-metadata.dat";
-                    if (ofd.ShowDialog() == DialogResult.OK)
-                    {
-                        metadataPath = ofd.FileName;
-                    }
-                    else
-                    {
-                        return;
-                    }
-                }
-                else
-                {
-                    return;
-                }
-            }
-#endif
-            if (il2cppPath == null)
-            {
-                ShowHelp();
-                return;
-            }
-            if (metadataPath == null)
-            {
-                Console.WriteLine($"ERROR: Metadata file not found or encrypted.");
-            }
-            else
-            {
-                try
-                {
-                    if (Init(il2cppPath, metadataPath, out var metadata, out var il2Cpp))
-                    {
-                        Dump(metadata, il2Cpp, outputDir);
-                    }
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }
-            }
-            if (config.RequireAnyKey)
-            {
-                Console.WriteLine("Press any key to exit...");
-                Console.ReadKey(true);
+                Dump(metadata, il2Cpp, outputDir);
             }
         }
-
-        static void ShowHelp()
+        catch (Exception e)
         {
-            Console.WriteLine($"usage: {AppDomain.CurrentDomain.FriendlyName} <executable-file> <global-metadata> <output-directory>");
+            Console.WriteLine(e);
         }
 
-        private static bool Init(string il2cppPath, string metadataPath, out Metadata metadata, out Il2Cpp il2Cpp)
+
+    }        private static bool Init(string il2cppPath, string metadataPath, out Metadata metadata, out Il2Cpp il2Cpp)
         {
             Console.WriteLine("Initializing metadata...");
             var metadataBytes = File.ReadAllBytes(metadataPath);
